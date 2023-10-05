@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Data.DAG
       Data.Instr
       Data.Stack
       Data.Type

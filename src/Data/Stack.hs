@@ -1,7 +1,8 @@
-{-# LANGUAGE DataKinds, GADTs #-}
+{-# LANGUAGE DataKinds, GADTs, KindSignatures, TypeOperators #-}
 module Data.Stack
-  ( Stack
+  ( Stack(..)
   , OnStack(..)
+  , StackItem
   , empty
   , push
   , pop
@@ -11,6 +12,13 @@ module Data.Stack
 
 import Data.Kind (Type)
 
+{- This just creates a product of constraints Eq and Show, which
+   are both required for an item to be put on Stack. -}
+class (Eq i, Show i) => StackItem i where
+
+instance StackItem Int where
+instance StackItem Bool where
+  
 {- The primary purpose of this data structure is to provide a
    framework for memory management. All intermediate values during
    computations will simply be put on stack and each instruction will
@@ -24,12 +32,12 @@ import Data.Kind (Type)
    stack. -}
 data Stack :: [Type] -> Type where
   Empty :: Stack '[]
-  Item :: t -> Stack r -> Stack (t ': r)
+  Item :: StackItem t => t -> Stack r -> Stack (t ': r)
 
 empty :: Stack '[]
 empty = Empty
 
-push :: t -> Stack r -> Stack (t ': r)
+push :: StackItem t => t -> Stack r -> Stack (t ': r)
 push = Item
 
 {- We use the fact that the Stack type is parametrised by the types of

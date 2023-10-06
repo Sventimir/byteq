@@ -36,7 +36,7 @@ data Instr :: [Type] -> [Type] -> Type where
   Gt :: Instr (Int ': Int ': r) (Bool ': r)
   -- Logic
   Not :: Instr (Bool ': r) (Bool ': r)
-  If :: Seq (a ': r) s -> Seq (a ': r) s -> Instr (Bool ': a ': r) s
+  If :: Seq r s -> Seq r s -> Instr (Bool ': r) s
   -- IO
   Print :: Instr (a ': r) r
 

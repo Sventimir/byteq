@@ -7,6 +7,7 @@ import Data.DAG (DAG(..), Variable(..))
 import Data.Instr (Instr(Push, Dig, Cond, Print), Seq(..), append)
 import Data.Kind (Type)
 import Data.List (intercalate)
+import Data.Maybe (fromMaybe)
 import Data.Stack (OnStack(..), StackItem)
 import Data.Type (TType(..))
 import Data.Type.Equality ((:~:)(Refl), TestEquality(..))
@@ -73,13 +74,14 @@ data CompileError where
 instance Show CompileError where
   show (Undefined v) =
     "Undefined variable: " <> show v
-  show (TypeMismatch _ tOpt stack) =
+  show (TypeMismatch expr tOpt stack) =
+    let prog = fromMaybe "" (show <$> expr) in
     case tOpt of
       Just t ->
         "A value of type " <> show t <> " was expected, but " <>
-        show stack <> " was found instead."
+        show stack <> " was found instead.\n" <> prog
       Nothing ->
-        " A value was expected on stack, but it's empty."
+        " A value was expected on stack, but it's empty.\n" <> prog
   show (StackMismatch expectedStack actualStack) =
     "A stack of shape: " <> show expectedStack <> " was expected, " <>
     "but: " <> show actualStack <> " was found instead."

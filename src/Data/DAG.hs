@@ -53,6 +53,21 @@ data DAG a where
   PrintVal :: StackItem a => DAG a -> DAG ()
   Seq :: StackItem a => DAG () -> DAG a -> DAG a
 
+instance Show (DAG a) where
+  show (Literal _ a) = show a
+  show (Assignment v expr) = show v <> " = " <> show expr
+  show (Var v) = "(" <> show v <> ")"
+  show (UnOp tArg tRet _ expr) =
+    "(op : " <> show tArg <> " ->" <> show tRet <> ") " <>
+    "(" <> show expr <> ")"
+  show (BinOp _ _ _ _ left right) =
+    "(" <> show left <> ") * (" <> show right <> ")"
+  show (If condExpr thenExpr elseExpr) =
+    "if " <> show condExpr <> " then " <> show thenExpr <>
+    " else " <> show elseExpr
+  show (PrintVal expr) = "print (" <> show expr <> ")"
+  show (Seq left right) = show left <> "\n" <> show right
+
 {- This is an example of a DAG representing the following program:
    a = 5
    b = 4 + a

@@ -3,6 +3,7 @@ module Data.DAG
   ( DAG(..)
   , Variable(..)
   , example1
+  , exampleFib
   ) where
 
 import Data.Instr (Instr(..))
@@ -78,4 +79,66 @@ example1 = (Assignment (Variable TInt "a") (Literal TInt 5))
   `Seq` (Assignment (Variable TInt "b")
         (BinOp TInt TInt TInt Add (Literal TInt 4) (Var (Variable TInt "a"))))
   `Seq` (PrintVal (Var (Variable TInt "a")))
+  `Seq` (PrintVal (Var (Variable TInt "b")))
+
+{- Print first 5 Fibonacci numbers (featuring variable shadowing)
+   (TODO: use a loop instead):
+   a = 1
+   b = 1
+   print a
+   print b
+   c = a + b
+   a = b
+   b = c
+   print b
+   c = a + b
+   a = b
+   b = c
+   print b
+   c = a + b
+   a = b
+   b = c
+   print b
+   c = a + b
+   a = b
+   b = c
+   print b
+   c = a + b
+   a = b
+   b = c
+   print b -}
+exampleFib :: DAG ()
+exampleFib = (Assignment (Variable TInt "a") (Literal TInt 1))
+  `Seq` (Assignment (Variable TInt "b") (Literal TInt 1))
+  `Seq` (PrintVal (Var (Variable TInt "a")))
+  `Seq` (PrintVal (Var (Variable TInt "b")))
+  `Seq` (Assignment (Variable TInt "c")
+        (BinOp TInt TInt TInt Add (Var (Variable TInt "a"))
+         (Var (Variable TInt "b"))))
+  `Seq` (Assignment (Variable TInt "a") (Var (Variable TInt "b")))
+  `Seq` (Assignment (Variable TInt "b") (Var (Variable TInt "c")))
+  `Seq` (PrintVal (Var (Variable TInt "b")))
+  `Seq` (Assignment (Variable TInt "c")
+        (BinOp TInt TInt TInt Add (Var (Variable TInt "a"))
+         (Var (Variable TInt "b"))))
+  `Seq` (Assignment (Variable TInt "a") (Var (Variable TInt "b")))
+  `Seq` (Assignment (Variable TInt "b") (Var (Variable TInt "c")))
+  `Seq` (PrintVal (Var (Variable TInt "b")))
+  `Seq` (Assignment (Variable TInt "c")
+        (BinOp TInt TInt TInt Add (Var (Variable TInt "a"))
+         (Var (Variable TInt "b"))))
+  `Seq` (Assignment (Variable TInt "a") (Var (Variable TInt "b")))
+  `Seq` (Assignment (Variable TInt "b") (Var (Variable TInt "c")))
+  `Seq` (PrintVal (Var (Variable TInt "b")))
+  `Seq` (Assignment (Variable TInt "c")
+        (BinOp TInt TInt TInt Add (Var (Variable TInt "a"))
+         (Var (Variable TInt "b"))))
+  `Seq` (Assignment (Variable TInt "a") (Var (Variable TInt "b")))
+  `Seq` (Assignment (Variable TInt "b") (Var (Variable TInt "c")))
+  `Seq` (PrintVal (Var (Variable TInt "b")))
+  `Seq` (Assignment (Variable TInt "c")
+        (BinOp TInt TInt TInt Add (Var (Variable TInt "a"))
+         (Var (Variable TInt "b"))))
+  `Seq` (Assignment (Variable TInt "a") (Var (Variable TInt "b")))
+  `Seq` (Assignment (Variable TInt "b") (Var (Variable TInt "c")))
   `Seq` (PrintVal (Var (Variable TInt "b")))

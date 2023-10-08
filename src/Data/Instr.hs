@@ -1,13 +1,14 @@
-{-# LANGUAGE DataKinds, GADTs, KindSignatures, TypeOperators #-}
+{-# LANGUAGE DataKinds, GADTs, KindSignatures, RankNTypes, TypeOperators #-}
 module Data.Instr
   ( Instr(..)
   , Seq(..)
   , execute
   , exec
+  , append
   ) where
 
 import Data.Kind (Type)
-import Data.Stack (Stack(..), StackItem, OnStack, push, dig)
+import Data.Stack (Stack(..), StackItem, OnStack, push, dupDig)
 
 
 {- This type represents VM instructions. It is parameterised by the
@@ -23,7 +24,7 @@ data Instr :: [Type] -> [Type] -> Type where
   Drop :: Instr (a ': r) r
   Dup :: StackItem a => Instr (a ': r) (a ': a ': r)
   Swap :: (StackItem a, StackItem b) => Instr (a ': b ': r) (b ': a ': r)
-  Dig :: StackItem a => OnStack a s r -> Instr r (a ': s)
+  Dig :: StackItem a => OnStack a s -> Instr s (a ': s)
   -- Arithmetic
   Add :: Instr (Int ': Int ': r) (Int ': r)
   Sub :: Instr (Int ': Int ': r) (Int ': r)
@@ -31,14 +32,14 @@ data Instr :: [Type] -> [Type] -> Type where
   Div :: Instr (Int ': Int ': r) (Int ': r)
   Rem :: Instr (Int ': Int ': r) (Int ': r)
   -- Comparison
-  Eq :: Instr (a ': a ': r) (Bool ': r)
+  Eq :: StackItem a => Instr (a ': a ': r) (Bool ': r)
   Lt :: Instr (Int ': Int ': r) (Bool ': r)
   Gt :: Instr (Int ': Int ': r) (Bool ': r)
   -- Logic
   Not :: Instr (Bool ': r) (Bool ': r)
-  If :: Seq r s -> Seq r s -> Instr (Bool ': r) s
+  Cond :: Seq r s -> Seq r s -> Instr (Bool ': r) s
   -- IO
-  Print :: Instr (a ': r) r
+  Print :: StackItem a => Instr (a ': r) r
 
 
 data Seq :: [Type] -> [Type] -> Type where
@@ -77,8 +78,7 @@ execInstr Dup stack@(Item a _) =
 execInstr Swap (Item a (Item b stack)) =
   return (push b $ push a stack)
 execInstr (Dig witness) stack =
-  let (a, stack') = dig witness stack in
-  return (a `push` stack')
+  return $ dupDig witness stack
 execInstr Add (Item a (Item b stack)) =
   return ((a + b) `push` stack)
 execInstr Sub (Item a (Item b stack)) =
@@ -97,8 +97,12 @@ execInstr Gt (Item a (Item b stack)) =
   return ((a > b) `push` stack)
 execInstr Not (Item a stack) =
   return (not a `push` stack)
-execInstr (If l r) (Item a stack) =
+execInstr (Cond l r) (Item a stack) =
   exec (if a then l else r) stack
 execInstr Print (Item a stack) = do
   print a
   return stack
+
+append :: Seq s t -> Instr t u -> Seq s u
+append Halt i = i :> Halt
+append (l :> s) r = l :> append s r

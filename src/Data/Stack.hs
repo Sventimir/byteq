@@ -7,7 +7,8 @@ module Data.Stack
   , push
   , pop
   , swap
-  , dig
+  -- , dig
+  , dupDig
   ) where
 
 import Data.Kind (Type)
@@ -18,6 +19,7 @@ class (Eq i, Show i) => StackItem i where
 
 instance StackItem Int where
 instance StackItem Bool where
+instance StackItem () where
   
 {- The primary purpose of this data structure is to provide a
    framework for memory management. All intermediate values during
@@ -54,17 +56,24 @@ swap (Item t (Item s r)) = Item s (Item t r)
 
 {- This is the type of a witness that a value of certain type is on
    the stack. In case the value is dug somewhere beneath the top, the
-   witness allows us to access the value in type- safe manner without
+   witness allows us to access the value in a type-safe manner without
    caring about the values on top of it.  The first parameter
    represents the type of the value in question. The second parameter
    is the type the stack will have when the value is removed. The
    final parameter is the current type of the stack. -}
-data OnStack :: Type -> [Type] -> [Type] -> Type where
-  OnTop :: OnStack t s (t ': s)
-  Beneath :: OnStack a s r -> OnStack a (t ': s) (t ': r)
+data OnStack :: Type -> [Type] -> Type where
+  OnTop :: OnStack t (t ': s)
+  Beneath :: OnStack a r -> OnStack a (t ': r)
 
-dig :: OnStack a s r -> Stack r -> (a, Stack s)
-dig OnTop (Item a s) = (a, s)
-dig (Beneath w) (Item t s) =
-  let (a, s') = dig w s in
-  (a, Item t s')
+-- dig :: OnStack a s r -> Stack r -> (a, Stack s)
+-- dig OnTop (Item a s) = (a, s)
+-- dig (Beneath w) (Item t s) =
+--   let (a, s') = dig w s in
+--   (a, Item t s')
+
+dupDig :: StackItem a => OnStack a r -> Stack r -> Stack (a ': r)
+dupDig w s = Item (find w s) s
+  where
+  find :: OnStack a r -> Stack r -> a
+  find OnTop (Item a _) = a
+  find (Beneath w') (Item _ s') = find w' s'

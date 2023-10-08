@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds, GADTs, KindSignatures, TypeOperators #-}
 module Control.Compiler
-  ( compile
+  ( CompilationResult(..)
+  , compile
   ) where
 
 import Data.DAG (DAG(..), Variable(..))
@@ -96,12 +97,8 @@ instance Show CompileError where
 
 {- This is the main function of the compiler. It takes a DAG and
    produces a sequence of instructions. -}
-compile :: DAG () -> Either CompileError (Seq '[] '[Int])
-compile dag = do
-  CompilationResult finStack instr <- compileExpr dag Empty Halt
-  case finStack of
-    Item (Variable TInt _) Empty -> return instr
-    _ -> Left $ TypeMismatch Nothing (Just TInt) finStack
+compile :: DAG () -> Either CompileError (CompilationResult '[])
+compile dag = do compileExpr dag Empty Halt
 
 {- NOTE: type parameter on DAG does not matter here, because
    expressions only exist at the DAG level. During compilation they're

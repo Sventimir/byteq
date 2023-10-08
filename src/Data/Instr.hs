@@ -49,21 +49,16 @@ data Seq :: [Type] -> [Type] -> Type where
 infixr 5 :>
 
 {- Execute a sequence of instructions. Execution always begins
-   with an empty Stack and finishes when the stack holds just
-   one integer. The integer becomes the exit code of the program.
-   The requirement that there must be nothing more on the stack
-   forces the compiler to implement some garbage collection
-   strategy so that unused values are removed from the stack.
-   The type signature does not ensure they will be removed as soon
-   as they're not needed, but they must be remove eventually (before
-   the program terminates). In practice, though, it will be easiest
-   to remove them immediately.
+   with an empty Stack and exits with an arbitrary stack. It
+   is possible to refine the type to enforce returning an empty
+   stack in order to force the compiler to introduce some
+   garbage collection strategy. This is not done yet, though.
    This function (somewhat sadly) returns IO, because we want to be
    able to print in the middle of computation. -}
-execute :: Seq s '[Int] -> Stack s -> IO Int
+execute :: Seq s t -> Stack s -> IO ()
 execute instr stack = do
-  Item exitCode Empty <- exec instr stack
-  return exitCode
+  _ <- exec instr stack
+  return ()
   
 exec :: Seq s s' -> Stack s -> IO (Stack s')
 exec Halt stack = return stack

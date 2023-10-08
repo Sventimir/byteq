@@ -11,13 +11,14 @@ module Data.Stack
   , dumpAddr
   ) where
 
+import Data.Int (Int64)
 import Data.Kind (Type)
 
 {- This just creates a product of constraints Eq and Show, which
    are both required for an item to be put on Stack. -}
 class (Eq i, Show i) => StackItem i where
 
-instance StackItem Int where
+instance StackItem Int64 where
 instance StackItem Bool where
 instance StackItem () where
   

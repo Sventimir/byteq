@@ -8,6 +8,7 @@ module Data.Instr
   , dump
   ) where
 
+import Data.Int (Int64)
 import Data.Kind (Type)
 import Data.List (intercalate)
 import Data.Stack (Stack(..), StackItem, OnStack, push, dupDig, dumpAddr)
@@ -28,15 +29,15 @@ data Instr :: [Type] -> [Type] -> Type where
   Swap :: (StackItem a, StackItem b) => Instr (a ': b ': r) (b ': a ': r)
   Dig :: StackItem a => OnStack a s -> Instr s (a ': s)
   -- Arithmetic
-  Add :: Instr (Int ': Int ': r) (Int ': r)
-  Sub :: Instr (Int ': Int ': r) (Int ': r)
-  Mul :: Instr (Int ': Int ': r) (Int ': r)
-  Div :: Instr (Int ': Int ': r) (Int ': r)
-  Rem :: Instr (Int ': Int ': r) (Int ': r)
+  Add :: Instr (Int64 ': Int64 ': r) (Int64 ': r)
+  Sub :: Instr (Int64 ': Int64 ': r) (Int64 ': r)
+  Mul :: Instr (Int64 ': Int64 ': r) (Int64 ': r)
+  Div :: Instr (Int64 ': Int64 ': r) (Int64 ': r)
+  Rem :: Instr (Int64 ': Int64 ': r) (Int64 ': r)
   -- Comparison
   Eq :: StackItem a => Instr (a ': a ': r) (Bool ': r)
-  Lt :: Instr (Int ': Int ': r) (Bool ': r)
-  Gt :: Instr (Int ': Int ': r) (Bool ': r)
+  Lt :: Instr (Int64 ': Int64 ': r) (Bool ': r)
+  Gt :: Instr (Int64 ': Int64 ': r) (Bool ': r)
   -- Logic
   Not :: Instr (Bool ': r) (Bool ': r)
   Cond :: Seq r s -> Seq r s -> Instr (Bool ': r) s

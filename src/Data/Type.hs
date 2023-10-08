@@ -3,6 +3,7 @@ module Data.Type
   ( TType(..)
   ) where
 
+import Data.Int (Int64)
 import Data.Type.Equality ((:~:)(Refl), TestEquality(..))
 
 
@@ -11,7 +12,7 @@ import Data.Type.Equality ((:~:)(Refl), TestEquality(..))
    stack for memory-management and instruction set. -}
 data TType a where
   TBool :: TType Bool
-  TInt :: TType Int -- Use bounded Integer type for better performance.
+  TInt :: TType Int64 -- Use bounded Integer type for better performance.
   -- TPair :: Type a -> Type b -> Type (a, b)
   -- TSum :: Type a -> Type b -> Type (Either a b)
   

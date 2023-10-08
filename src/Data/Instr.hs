@@ -6,12 +6,15 @@ module Data.Instr
   , exec
   , append
   , dump
+  , toBytes
+  , write
   ) where
 
 import Data.Int (Int64)
+import qualified Data.ByteString.Builder as Bytes
 import Data.Kind (Type)
 import Data.List (intercalate)
-import Data.Stack (Stack(..), StackItem, OnStack, push, dupDig, dumpAddr)
+import Data.Stack (Stack(..), StackItem(..), OnStack, push, dupDig, dumpAddr)
 
 
 {- This type represents VM instructions. It is parameterised by the
@@ -135,5 +138,36 @@ dumpInstr Not = "Not"
 dumpInstr (Cond l r) = "Cond (" <> dump l <> ") (" <> dump r <> ")"
 dumpInstr Print = "Print"
 
+{- Convert a sequence of instructions to a bytestring. This creates a raw
+   representation of an instruction sequence to be written to a file.
+   This essentially renders a 0-terminated string of bytes. Several instructions
+   need to store additional data (literals, memory addresses, nested sequences
+   of instructions etc.). For this reason we're limited to 255 instruction codes,
+   but we're far from reaching this limit in this exercise, so it's fine.
+   Also note that a function parsing those bytestrings must be aware of which
+   instructions store additional data and how to parse it. -}
+toBytes :: Seq s t -> Bytes.Builder
+toBytes Halt = Bytes.word8 0
+toBytes (instr :> s) = opCode instr <> toBytes s
 
+opCode :: Instr s t -> Bytes.Builder
+opCode (Push a) = Bytes.word8 1 <> encode a
+opCode Drop = Bytes.word8 2
+opCode Dup = Bytes.word8 3
+opCode Swap = Bytes.word8 4
+opCode (Dig addr) = Bytes.word8 5 <> Bytes.word8 (dumpAddr addr)
+opCode Add = Bytes.word8 6
+opCode Sub = Bytes.word8 7
+opCode Mul = Bytes.word8 8
+opCode Div = Bytes.word8 9
+opCode Rem = Bytes.word8 10
+opCode Eq = Bytes.word8 11
+opCode Lt = Bytes.word8 12
+opCode Gt = Bytes.word8 13
+opCode Not = Bytes.word8 14
+-- Note that these sequences need to be parsed until 0 (Halt) is reached.
+opCode (Cond l r) = Bytes.word8 15 <> toBytes l <> toBytes r
+opCode Print = Bytes.word8 16
 
+write :: FilePath -> Seq s t -> IO ()
+write path = Bytes.writeFile path . toBytes

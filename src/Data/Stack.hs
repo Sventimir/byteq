@@ -2,7 +2,7 @@
 module Data.Stack
   ( Stack(..)
   , OnStack(..)
-  , StackItem
+  , StackItem(..)
   , empty
   , push
   , pop
@@ -12,15 +12,27 @@ module Data.Stack
   ) where
 
 import Data.Int (Int64)
+import Data.ByteString.Builder (Builder, word8, int64BE)
 import Data.Kind (Type)
+import Data.Word (Word8)
 
-{- This just creates a product of constraints Eq and Show, which
-   are both required for an item to be put on Stack. -}
+{- To be store-able on a stack, a type must implement:
+  * Show (for Print instructionn)
+  * Eq (for Eq instruction)
+  * toBytes (for encoding literals in bytecode). -}
 class (Eq i, Show i) => StackItem i where
+  encode :: i -> Builder
 
 instance StackItem Int64 where
+  encode = int64BE
+  
 instance StackItem Bool where
+  encode True = word8 0
+  encode False = word8 1
+
+-- This is a dummy instance. We don't need to store () on the stack.
 instance StackItem () where
+  encode () = mempty
   
 {- The primary purpose of this data structure is to provide a
    framework for memory management. All intermediate values during
@@ -79,7 +91,13 @@ dupDig w s = Item (find w s) s
   find OnTop (Item a _) = a
   find (Beneath w') (Item _ s') = find w' s'
 
-{- Convert an address to Integer form for display. -}
-dumpAddr :: OnStack a s -> Int
+{- Convert an address to Integer form for byte encoding or display.
+   NOTE: because we want every bytecode element to be constant-size,
+   we need to decide on a constant-size type to be returned here.  We
+   don't need sign, as these are effectively natural numbers, so let's
+   use Word8. This has the side-effect of limitting the stack size to
+   256 items. We should ensure stack cannot grow larger than that or
+   else we will be producing wrong addresses. -}
+dumpAddr :: OnStack a s -> Word8
 dumpAddr OnTop = 0
 dumpAddr (Beneath addr) = succ $ dumpAddr addr

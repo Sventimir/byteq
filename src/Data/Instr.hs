@@ -6,8 +6,8 @@ module Data.Instr
   , exec
   , append
   , dump
-  , toBytes
-  , write
+  , bytecode
+  , writeBytecode
   ) where
 
 import Data.Int (Int64)
@@ -146,9 +146,9 @@ dumpInstr Print = "Print"
    but we're far from reaching this limit in this exercise, so it's fine.
    Also note that a function parsing those bytestrings must be aware of which
    instructions store additional data and how to parse it. -}
-toBytes :: Seq s t -> Bytes.Builder
-toBytes Halt = Bytes.word8 0
-toBytes (instr :> s) = opCode instr <> toBytes s
+bytecode :: Seq s t -> Bytes.Builder
+bytecode Halt = Bytes.word8 0
+bytecode (instr :> s) = opCode instr <> bytecode s
 
 opCode :: Instr s t -> Bytes.Builder
 opCode (Push a) = Bytes.word8 1 <> encode a
@@ -166,8 +166,8 @@ opCode Lt = Bytes.word8 12
 opCode Gt = Bytes.word8 13
 opCode Not = Bytes.word8 14
 -- Note that these sequences need to be parsed until 0 (Halt) is reached.
-opCode (Cond l r) = Bytes.word8 15 <> toBytes l <> toBytes r
+opCode (Cond l r) = Bytes.word8 15 <> bytecode l <> bytecode r
 opCode Print = Bytes.word8 16
 
-write :: FilePath -> Seq s t -> IO ()
-write path = Bytes.writeFile path . toBytes
+writeBytecode :: FilePath -> Seq s t -> IO ()
+writeBytecode path = Bytes.writeFile path . bytecode

@@ -3,12 +3,13 @@ module Control.Compiler
   ( compile
   ) where
 
-import Data.Kind (Type)
-import Data.Type (TType(..))
-import Data.Type.Equality ((:~:)(Refl), TestEquality(..))
 import Data.DAG (DAG(..), Variable(..))
 import Data.Instr (Instr(Push, Dig, Cond, Print), Seq(..), append)
+import Data.Kind (Type)
+import Data.List (intercalate)
 import Data.Stack (OnStack(..), StackItem)
+import Data.Type (TType(..))
+import Data.Type.Equality ((:~:)(Refl), TestEquality(..))
 
 
 {- This structure models a runtime stack. It contains typed variables,
@@ -39,6 +40,13 @@ instance TestEquality VarStack where
     return Refl
   testEquality _ _ = Nothing
 
+instance Show (VarStack s) where
+  show stack = "[" <> intercalate ", " (showEach stack) <> "]"
+    where
+    showEach :: VarStack s -> [String]
+    showEach Empty = []
+    showEach (Item v s) = show v : showEach s
+
 {- Search the VarStack for a given variable. Return the stack
    position if found; otherwise return Nothing. -}
 find :: Variable a -> VarStack s -> Maybe (OnStack a s)
@@ -61,6 +69,28 @@ data CompileError where
   TypeMismatch :: Maybe (DAG a) -> Maybe (TType a) -> VarStack s -> CompileError
   StackMismatch :: VarStack a -> VarStack b -> CompileError
   IlldefinedVar :: Maybe (Variable a) -> Variable b -> CompileError
+
+instance Show CompileError where
+  show (Undefined v) =
+    "Undefined variable: " <> show v
+  show (TypeMismatch _ tOpt stack) =
+    case tOpt of
+      Just t ->
+        "A value of type " <> show t <> " was expected, but " <>
+        show stack <> " was found instead."
+      Nothing ->
+        " A value was expected on stack, but it's empty."
+  show (StackMismatch expectedStack actualStack) =
+    "A stack of shape: " <> show expectedStack <> " was expected, " <>
+    "but: " <> show actualStack <> " was found instead."
+  show (IlldefinedVar actualOpt expected) =
+    case actualOpt of
+      Nothing ->
+        "A var binding requires a variable: " <> show expected <>
+        ", but none was found."
+      Just actual ->
+        "A var binding expected a variable: " <> show expected <>
+        ", but " <> show actual <> " was found."
 
 {- This is the main function of the compiler. It takes a DAG and
    produces a sequence of instructions. -}

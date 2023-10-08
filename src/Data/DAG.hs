@@ -24,7 +24,11 @@ data Variable a = Variable (TType a) String
 instance TestEquality Variable where
   testEquality (Variable t n) (Variable t' n') = do
     Refl <- testEquality t t'
-    if n == n' then Just Refl else Nothing 
+    if n == n' then Just Refl else Nothing
+
+instance Show (Variable a) where
+  show (Variable t "") = show t
+  show (Variable t n) = n <> " : " <> show t
 
 {- For Direct Acyclic Graph of program's execution. Each DAG
    constitutes an expression and is parametrised by the type of that

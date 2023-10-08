@@ -25,3 +25,7 @@ instance TestEquality TType where
   testEquality TBool TBool = Just Refl
   testEquality TInt TInt = Just Refl
   testEquality _ _ = Nothing
+
+instance Show (TType a) where
+  show TBool = "Bool"
+  show TInt = "Int"

@@ -5,7 +5,7 @@ module Control.Compiler
   ) where
 
 import Data.DAG (DAG(..), Variable(..))
-import Data.Instr (Instr(Push, Dig, Cond, Print), Seq(..), append)
+import Data.Instr (Instr(Push, Dig, Dup, Cond, Print), Seq(..), append)
 import Data.Kind (Type)
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
@@ -125,6 +125,11 @@ compileExpr (Assignment var@(Variable typ name) expr) stack instr = do
 compileExpr (Var v) stack instr =
   case find v stack of
     Nothing -> Left $ Undefined v
+    -- The variable is already on top. We just need to Dup it.
+    -- This saves us the necessity to store the address.
+    Just OnTop -> return $ CompilationResult
+                            (Item v stack)
+                            (append instr Dup)
     Just address -> return $ CompilationResult
                               (Item v stack)
                               (append instr $ Dig address)

@@ -100,13 +100,13 @@ Sadly, all the variables remain on the stack until the end of program's
 execution. There is no garbage collection mechanism yet, although
 one could be implemented relatively easily by analysing which instruction
 is the last to use each variable. The instruction which performs a
-variable reference is always `Dig`, so by annotating them temporarily
-with variable names we could traverse a sequence of instructions from
-right to left and after each `Dig` instruction referencing a
-particular variable for the first time we would insert instructions to
-remove the unneeded value from the stack. Such a solution would ensure
-minimal runtime overhead at the expense of somewhat longer compilation
-time.
+variable reference is always `Dig` or `Dup`, so by annotating them
+temporarily with variable names we could traverse a sequence of
+instructions from right to left and after each `Dig` (or `Dup`)
+instruction referencing a particular variable for the first time we
+would insert instructions to remove the unneeded value from the
+stack. Such a solution would ensure minimal runtime overhead at the
+expense of somewhat longer compilation time.
 
 ### The bytecode
 

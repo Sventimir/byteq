@@ -7,8 +7,8 @@ module Data.Stack
   , push
   , pop
   , swap
-  -- , dig
   , dupDig
+  , dumpAddr
   ) where
 
 import Data.Kind (Type)
@@ -77,3 +77,8 @@ dupDig w s = Item (find w s) s
   find :: OnStack a r -> Stack r -> a
   find OnTop (Item a _) = a
   find (Beneath w') (Item _ s') = find w' s'
+
+{- Convert an address to Integer form for display. -}
+dumpAddr :: OnStack a s -> Int
+dumpAddr OnTop = 0
+dumpAddr (Beneath addr) = succ $ dumpAddr addr

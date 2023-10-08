@@ -5,10 +5,12 @@ module Data.Instr
   , execute
   , exec
   , append
+  , dump
   ) where
 
 import Data.Kind (Type)
-import Data.Stack (Stack(..), StackItem, OnStack, push, dupDig)
+import Data.List (intercalate)
+import Data.Stack (Stack(..), StackItem, OnStack, push, dupDig, dumpAddr)
 
 
 {- This type represents VM instructions. It is parameterised by the
@@ -98,6 +100,39 @@ execInstr Print (Item a stack) = do
   print a
   return stack
 
+{- Add an instruction to the end of a sequence. Unfortunately, this
+   operation is O(n) in the length of the sequence we append to.
+   This could perhaps be optimised with a smarter representation of
+   the Seq type. -}
 append :: Seq s t -> Instr t u -> Seq s u
 append Halt i = i :> Halt
 append (l :> s) r = l :> append s r
+
+{- Dump a sequence of instructions to a string (useful for debuggind). -}
+dump :: Seq s t -> String
+dump s = "[" <> intercalate "; " (eachInstr s) <> "]"
+  where
+  eachInstr :: Seq s t -> [String]
+  eachInstr Halt = []
+  eachInstr (instr :> s') = dumpInstr instr : eachInstr s'
+
+dumpInstr :: Instr s t -> String
+dumpInstr (Push a) = "Push " <> show a
+dumpInstr Drop = "Drop"
+dumpInstr Dup = "Dup"
+dumpInstr Swap = "Swap"
+dumpInstr (Dig addr) = "Dig " <> show (dumpAddr addr)
+dumpInstr Add = "Add"
+dumpInstr Sub = "Sub"
+dumpInstr Mul = "Mul"
+dumpInstr Div = "Div"
+dumpInstr Rem = "Rem"
+dumpInstr Eq = "Eq"
+dumpInstr Lt = "Lt"
+dumpInstr Gt = "Gt"
+dumpInstr Not = "Not"
+dumpInstr (Cond l r) = "Cond (" <> dump l <> ") (" <> dump r <> ")"
+dumpInstr Print = "Print"
+
+
+

@@ -10,12 +10,15 @@ module Data.Instr
   , writeBytecode
   ) where
 
+import Data.Functor.Identity (Identity(..))
 import Data.Int (Int64)
 import qualified Data.ByteString.Builder as Bytes
 import Data.Kind (Type)
 import Data.List (intercalate)
 import Data.Stack (Stack(..), StackItem(..), OnStack, push, dupDig, dumpAddr)
 
+
+type ExecStack = Stack Identity
 
 {- This type represents VM instructions. It is parameterised by the
    shape of the stack before and after executing the instruction.
@@ -61,18 +64,18 @@ infixr 5 :>
    garbage collection strategy. This is not done yet, though.
    This function (somewhat sadly) returns IO, because we want to be
    able to print in the middle of computation. -}
-execute :: Seq s t -> Stack s -> IO ()
+execute :: Seq s t -> ExecStack s -> IO ()
 execute instr stack = do
   _ <- exec instr stack
   return ()
   
-exec :: Seq s s' -> Stack s -> IO (Stack s')
+exec :: Seq s s' -> ExecStack s -> IO (ExecStack s')
 exec Halt stack = return stack
 exec (instr :> s) stack = execInstr instr stack >>= exec s
 
 
-execInstr :: Instr r s -> Stack r -> IO (Stack s)
-execInstr (Push a) stack = return (a `push` stack)
+execInstr :: Instr r s -> ExecStack r -> IO (ExecStack s)
+execInstr (Push a) stack = return (Identity a `push` stack)
 execInstr Drop (Item _ stack) = return stack
 execInstr Dup stack@(Item a _) =
   return (a `push` stack)
@@ -91,15 +94,15 @@ execInstr Div (Item a (Item b stack)) =
 execInstr Rem (Item a (Item b stack)) =
   return ((a `rem` b) `push` stack)
 execInstr Eq (Item a (Item b stack)) =
-  return ((a == b) `push` stack)
+  return (Identity (a == b) `push` stack)
 execInstr Lt (Item a (Item b stack)) =
-  return ((a < b) `push` stack)
+  return (Identity (a < b) `push` stack)
 execInstr Gt (Item a (Item b stack)) =
-  return ((a > b) `push` stack)
+  return (Identity (a > b) `push` stack)
 execInstr Not (Item a stack) =
-  return (not a `push` stack)
+  return ((not <$> a) `push` stack)
 execInstr (Cond l r) (Item a stack) =
-  exec (if a then l else r) stack
+  exec (if runIdentity a then l else r) stack
 execInstr Print (Item a stack) = do
   print a
   return stack

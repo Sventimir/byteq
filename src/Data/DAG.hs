@@ -11,7 +11,8 @@ import Data.Type (TType(..))
 import Data.Type.Equality ((:~:)(Refl), TestEquality(..))
 import Data.Stack (StackItem)
 
-{- This data structure stores data about a variable in program's memory:
+
+{- This data structure stores represents a variable in program's memory:
    * name
    * type -}
 data Variable a = Variable (TType a) String

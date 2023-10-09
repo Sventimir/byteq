@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, GADTs, KindSignatures, TypeOperators #-}
+{-# LANGUAGE DataKinds, FlexibleInstances, GADTs, KindSignatures, TypeOperators #-}
 module Control.Compiler
   ( CompilationResult(..)
   , compile
@@ -6,12 +6,21 @@ module Control.Compiler
 
 import Data.DAG (DAG(..), Variable(..))
 import Data.Instr (Instr(Push, Dig, Dup, Cond, Print), Seq(..), append)
+import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
-import Data.Stack (OnStack(..))
+import Data.Stack (Stack(..), OnStack(..), find)
 import Data.Type (TType(..))
 import Data.Type.Equality ((:~:)(Refl), TestEquality(..))
-import Data.VariableStack (VarStack(..), find)
 
+
+type VarStack = Stack Variable
+
+instance Show (VarStack s) where
+  show stack = "[" <> intercalate ", " (showEach stack) <> "]"
+    where
+    showEach :: VarStack s -> [String]
+    showEach Empty = []
+    showEach (Item v s) = show v : showEach s
 
 {- This structure represents a successful compilation step, where
    a sequence of instructions is returned, along with the type of

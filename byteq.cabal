@@ -30,6 +30,7 @@ library
       Data.Instr
       Data.Stack
       Data.Type
+      Data.VariableStack
   other-modules:
       Paths_byteq
   autogen-modules:

@@ -1,8 +1,9 @@
 module Main (main) where
 
 import Control.Compiler (CompilationResult(..), compile)
+import Data.Bytecode (dump, writeBytecode)
 import qualified Data.DAG as DAG
-import Data.Instr (execute, dump, writeBytecode)
+import Data.Instr (execute)
 import Data.Stack (Stack(Empty))
 import System.Exit (ExitCode(..), exitWith)
 import System.Environment (getArgs)

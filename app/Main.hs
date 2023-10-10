@@ -1,7 +1,9 @@
 module Main (main) where
 
 import Control.Compiler (CompilationResult(..), compile)
-import Data.Bytecode (dump, writeBytecode)
+import Control.Monad (when)
+import Data.Bytecode (BytecodeParseState(..), dump, writeBytecode, parseBytecode)
+import qualified Data.ByteString as Bytes
 import qualified Data.DAG as DAG
 import Data.Instr (execute)
 import Data.Stack (Stack(Empty))
@@ -18,6 +20,7 @@ main = do
 
 selectCmd :: String -> Maybe ([String] -> IO ())
 selectCmd "build" = Just build
+selectCmd "run" = Just run
 selectCmd "interp" = Just interp
 selectCmd _ = Nothing
 
@@ -31,6 +34,20 @@ interp args = do
       print err
       exitWith (ExitFailure 1)
     Right (CompilationResult _finStack instr) -> do
+      putStrLn $ dump instr
+      execute instr Empty
+
+run :: [String] -> IO ()
+run args = do
+  bytes <- Bytes.readFile $ head args
+  case parseBytecode bytes of
+    Left err -> do
+      print err
+      exitWith (ExitFailure 1)
+    Right (BytecodeParseState bytes _finStack instr) -> do
+      when (Bytes.length bytes > 0) $ do
+        putStr "Trailing bytes in bytecode: "
+        print bytes
       putStrLn $ dump instr
       execute instr Empty
 

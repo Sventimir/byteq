@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds, GADTs, KindSignatures, TypeOperators #-}
 module Data.Bytecode
-  ( bytecode
+  ( BytecodeParseState(..)
+  , bytecode
   , dump
   , writeBytecode
   , parseInt64
@@ -104,6 +105,17 @@ instance Eq BytecodeError where
     isJust (testEquality s1 s3)
     && isJust (testEquality s2 s4)
   _ == _ = False
+
+instance Show BytecodeError where
+  show EndOfInput = "Unexpected end of input"
+  show (InvalidType w) = "Invalid type: " <> show w
+  show (InvalidBool w) = "Invalid boolean value: " <> show w
+  show (InvalidOpcode w) = "Invalid opcode: " <> show w
+  show UnexpectedEmptyStack = "Unexpected empty stack"
+  show (TypeMismatch t1 t2) = "Type mismatch: " <> show t1 <> " was expected, but " <>
+                              show t2 <> "was found."
+  show (StackMismatch s1 s2) = "Stack mismatch: " <> show s1 <> " was expected, but " <>
+                               show s2 <> "was found."
   
 
 data BytecodeParseState :: [Type] -> Type where

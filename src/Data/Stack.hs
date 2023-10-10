@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, GADTs, KindSignatures, TypeOperators #-}
+{-# LANGUAGE DataKinds, FlexibleInstances, GADTs, KindSignatures, TypeOperators #-}
 module Data.Stack
   ( Stack(..)
   , OnStack(..)
@@ -15,6 +15,7 @@ module Data.Stack
 import Data.ByteString.Builder (Builder, word8, int64BE)
 import Data.Int (Int64)
 import Data.Kind (Type)
+import Data.List (intercalate)
 import Data.Type (TType(..))
 import Data.Type.Equality ((:~:)(Refl), TestEquality(..))
 import Data.Word (Word8)
@@ -145,3 +146,10 @@ find a (Item b s) =
   case testEquality a b of
     Just Refl -> Just OnTop
     Nothing -> Beneath <$> find a s
+
+instance Show (Stack TType s) where
+  show stack = "[" <> intercalate ", " (eachItem stack) <> "]"
+    where
+    eachItem :: Stack TType s -> [String]
+    eachItem Empty = []
+    eachItem (Item t s) = show t : eachItem s

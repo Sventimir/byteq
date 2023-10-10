@@ -13,6 +13,9 @@ import Data.Type (TType(..))
 import Data.Type.Equality ((:~:)(Refl), TestEquality(..))
 
 
+{- This is a stack type specialised to hold variables. It can be
+   made an instance of show, because TType's type parameter is
+   phantom: there's no actual value of that type inside. -}
 type VarStack = Stack Variable
 
 instance Show (VarStack s) where

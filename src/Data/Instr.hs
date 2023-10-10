@@ -11,6 +11,7 @@ import Data.Functor.Identity (Identity(..))
 import Data.Int (Int64)
 import Data.Kind (Type)
 import Data.Stack (Stack(..), StackItem(..), OnStack, push, dupDig)
+import Data.Type (TType(..))
 
 
 type ExecStack = Stack Identity
@@ -24,7 +25,7 @@ type ExecStack = Stack Identity
    * the value we access has exactly the type we expect. -}
 data Instr :: [Type] -> [Type] -> Type where
   -- stack manipulation
-  Push :: StackItem a => a -> Instr r (a ': r)
+  Push :: StackItem a => TType a -> a -> Instr r (a ': r)
   Drop :: Instr (a ': r) r
   Dup :: StackItem a => Instr (a ': r) (a ': a ': r)
   Swap :: (StackItem a, StackItem b) => Instr (a ': b ': r) (b ': a ': r)
@@ -70,7 +71,7 @@ exec (instr :> s) stack = execInstr instr stack >>= exec s
 
 
 execInstr :: Instr r s -> ExecStack r -> IO (ExecStack s)
-execInstr (Push a) stack = return (Identity a `push` stack)
+execInstr (Push _ a) stack = return (Identity a `push` stack)
 execInstr Drop (Item _ stack) = return stack
 execInstr Dup stack@(Item a _) =
   return (a `push` stack)

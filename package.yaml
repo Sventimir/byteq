@@ -58,3 +58,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - byteq
+    - hspec
+    - QuickCheck

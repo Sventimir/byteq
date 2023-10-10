@@ -72,7 +72,7 @@ compileExpr :: DAG a -> VarStack s -> Seq r s -> Either CompileError (Compilatio
 compileExpr (Literal typ val) stack iseq =
   return $ CompilationResult
       (Item (Variable typ "") stack)
-      (append iseq $ Push val) 
+      (append iseq $ Push typ val) 
 
 compileExpr (Assignment var@(Variable typ name) expr) stack instr = do
   CompilationResult stack' instr' <- compileExpr expr stack instr

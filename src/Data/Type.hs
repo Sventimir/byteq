@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 module Data.Type
   ( TType(..)
+  , SomeType(..)
   ) where
 
 import Data.Int (Int64)
@@ -30,3 +31,22 @@ instance TestEquality TType where
 instance Show (TType a) where
   show TBool = "Bool"
   show TInt = "Int"
+
+instance Eq (TType a) where
+  TBool == TBool = True
+  TInt == TInt = True
+
+{- This existential type wrapper is necessary in cases where we need to
+   return a type, but we don't know in advance which one. This is because
+   in this type the constructor determines the exact type, which maybe
+   unknown in advance (for instance when parsing bytecode). It allows us
+   hide the type variable and only access it through pattern-matching,
+   when it becomes known (again, because the constructor determines the
+   exact type). -}
+data SomeType where
+  SomeType :: TType a -> SomeType
+
+instance Eq SomeType where
+  SomeType TBool == SomeType TBool = True
+  SomeType TInt == SomeType TInt = True
+  _ == _ = False

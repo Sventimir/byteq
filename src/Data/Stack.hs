@@ -12,9 +12,10 @@ module Data.Stack
   , find
   ) where
 
-import Data.Int (Int64)
 import Data.ByteString.Builder (Builder, word8, int64BE)
+import Data.Int (Int64)
 import Data.Kind (Type)
+import Data.Type (TType(..))
 import Data.Type.Equality ((:~:)(Refl), TestEquality(..))
 import Data.Word (Word8)
 
@@ -31,6 +32,10 @@ instance StackItem Int64 where
 instance StackItem Bool where
   encode True = word8 0
   encode False = word8 1
+
+instance StackItem (TType a) where
+  encode TBool = word8 0
+  encode TInt = word8 1
 
 -- This is a dummy instance. We don't need to store () on the stack.
 instance StackItem () where

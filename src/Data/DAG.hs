@@ -3,6 +3,7 @@ module Data.DAG
   ( DAG(..)
   , Variable(..)
   , example1
+  , example2
   , exampleFib
   ) where
 
@@ -44,6 +45,7 @@ data DAG a where
   Literal :: StackItem a => TType a -> a -> DAG a
   Assignment :: StackItem a => Variable a -> DAG a -> DAG ()
   Var :: StackItem a => Variable a -> DAG a
+  Pass :: DAG ()
   UnOp :: (StackItem a, StackItem b) =>
           TType a -> TType b -> (forall r. Instr (a ': r) (b ': r)) ->
           DAG a -> DAG b
@@ -59,6 +61,7 @@ instance Show (DAG a) where
   show (Literal _ a) = show a
   show (Assignment v expr) = show v <> " = " <> show expr
   show (Var v) = "(" <> show v <> ")"
+  show Pass = "()"
   show (UnOp tArg tRet _ expr) =
     "(op : " <> show tArg <> " ->" <> show tRet <> ") " <>
     "(" <> show expr <> ")"
@@ -81,6 +84,31 @@ example1 = (Assignment (Variable TInt "a") (Literal TInt 5))
         (BinOp TInt TInt TInt Add (Literal TInt 4) (Var (Variable TInt "a"))))
   `Seq` (PrintVal (Var (Variable TInt "a")))
   `Seq` (PrintVal (Var (Variable TInt "b")))
+
+{- This is an example DAG representing the following program:
+   a = 1
+   b = 0
+   if b == a {
+     print 0
+   }
+   if a > b {
+     print 1
+   }
+   print a + b -}
+example2 :: DAG ()
+example2 = (Assignment (Variable TInt "a") (Literal TInt 1))
+  `Seq` (Assignment (Variable TInt "b") (Literal TInt 0))
+  `Seq` (If (BinOp TInt TInt TBool Eq (Var (Variable TInt "b"))
+             (Var (Variable TInt "a")))
+        (PrintVal (Literal TInt 0))
+        Pass)
+  `Seq` (If (BinOp TInt TInt TBool Gt (Var (Variable TInt "a"))
+             (Var (Variable TInt "b")))
+        (PrintVal (Literal TInt 1))
+        Pass)
+  `Seq` (PrintVal (BinOp TInt TInt TInt Add (Var (Variable TInt "a"))
+                   (Var (Variable TInt "b"))))
+           
 
 {- Print first 5 Fibonacci numbers (featuring variable shadowing)
    (TODO: use a loop instead):

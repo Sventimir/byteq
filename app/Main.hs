@@ -60,6 +60,7 @@ showInstr args = do
 
 selectProgram :: String -> Maybe (DAG.DAG ())
 selectProgram "example1" = Just DAG.example1
+selectProgram "example2" = Just DAG.example2
 selectProgram "fib" = Just DAG.exampleFib
 selectProgram _ = Nothing
 

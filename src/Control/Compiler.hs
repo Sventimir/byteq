@@ -100,6 +100,8 @@ compileExpr (Var v) stack instr =
                               (Item v stack)
                               (append instr $ Dig address)
 
+compileExpr Pass stack instr = return $ CompilationResult stack instr
+
 compileExpr (UnOp tArg tRet i expr) stack instr = do
   CompilationResult stack' instr' <- compileExpr expr stack instr
   case stack' of

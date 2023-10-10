@@ -5,7 +5,7 @@ module Control.Compiler
   ) where
 
 import Data.DAG (DAG(..), Variable(..))
-import Data.Instr (Instr(Push, Dig, Dup, Cond, Print), Seq(..), append)
+import Data.Instr (Instr(..), Seq(..), append)
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Data.Stack (Stack(..), OnStack(..), find)
@@ -81,12 +81,11 @@ compileExpr (Assignment var@(Variable typ name) expr) stack instr = do
   CompilationResult stack' instr' <- compileExpr expr stack instr
   case stack' of
     Empty -> Left $ IlldefinedVar Nothing var
-    Item v@(Variable t _) remStack ->
-      case testEquality t typ of
-           Just Refl -> return $ CompilationResult
-                           (Item (Variable t name) remStack)
-                           instr'
-           Nothing -> Left $ IlldefinedVar (Just v) var
+    Item v@(Variable t _) remStack -> do
+      Refl <- assertTypesEq (IlldefinedVar (Just v) var) typ t
+      return $ CompilationResult
+                 (Item (Variable t name) remStack)
+                 instr'
 
 compileExpr (Var v) stack instr =
   case find v stack of
@@ -106,12 +105,11 @@ compileExpr (UnOp tArg tRet i expr) stack instr = do
   CompilationResult stack' instr' <- compileExpr expr stack instr
   case stack' of
     Empty -> Left $ TypeMismatch (Just expr) (Just tArg) Empty
-    Item (Variable top _) remStack ->
-      case testEquality tArg top of
-        Nothing -> Left $ TypeMismatch (Just expr) (Just tArg) stack'
-        Just Refl -> return $ CompilationResult
-                              (Item (Variable tRet "") remStack)
-                              (append instr' i)
+    Item (Variable top _) remStack -> do
+      Refl <- assertTypesEq (TypeMismatch (Just expr) (Just tArg) stack') tArg top
+      return $ CompilationResult
+                 (Item (Variable tRet "") remStack)
+                 (append instr' i)
 
 compileExpr (BinOp tLeft tRight tRet i left right) stack instr = do
   CompilationResult stack' instr' <- compileExpr right stack instr
@@ -119,15 +117,12 @@ compileExpr (BinOp tLeft tRight tRet i left right) stack instr = do
   case stack'' of
     Empty -> Left $ TypeMismatch (Just left) (Just tLeft) Empty
     Item (Variable _ _) Empty -> Left $ TypeMismatch (Just right) (Just tRight) stack''
-    Item (Variable top _) (Item (Variable subTop _) remStack) ->
-      case testEquality tLeft top of
-        Nothing -> Left $ TypeMismatch (Just left) (Just tLeft) stack''
-        Just Refl ->
-          case testEquality tRight subTop of
-            Nothing -> Left $ TypeMismatch (Just right) (Just tRight) stack''
-            Just Refl -> return $ CompilationResult
-                              (Item (Variable tRet "") remStack)
-                              (append instr'' i)
+    Item (Variable top _) (Item (Variable subTop _) remStack) -> do
+      Refl <- assertTypesEq (TypeMismatch (Just left) (Just tLeft) stack'') tLeft top
+      Refl <- assertTypesEq (TypeMismatch (Just right) (Just tRight) stack'') tRight subTop
+      return $ CompilationResult
+                 (Item (Variable tRet "") remStack)
+                 (append instr'' i)
   
 compileExpr (If cond left right) stack instr = do
   CompilationResult stack' instr' <- compileExpr cond stack instr
@@ -136,12 +131,10 @@ compileExpr (If cond left right) stack instr = do
     Item (Variable TBool _) remStack -> do
       CompilationResult thenStack thenInstr <- compileExpr left remStack Halt
       CompilationResult elseStack elseInstr <- compileExpr right remStack Halt
-      case testEquality thenStack elseStack of
-        Nothing -> Left $ StackMismatch thenStack elseStack
-        Just Refl ->
-          return $ CompilationResult
-                     thenStack
-                     (append instr' $ Cond thenInstr elseInstr)
+      Refl <- assertStacksEq (StackMismatch thenStack elseStack) thenStack elseStack
+      return $ CompilationResult
+                thenStack
+                (append instr' $ Cond thenInstr elseInstr)
     _ -> Left $ TypeMismatch (Just cond) (Just TBool) stack'
 
 compileExpr (PrintVal expr) stack instr = do
@@ -157,3 +150,18 @@ compileExpr (Seq left right) stack instr = do
   CompilationResult stack' instr' <- compileExpr left stack instr
   CompilationResult stack'' instr'' <- compileExpr right stack' instr'
   return $ CompilationResult stack'' instr''
+
+
+assertTypesEq :: CompileError -> TType a -> TType b -> Either CompileError (a :~: b)
+assertTypesEq err expected actual =
+  case testEquality expected actual of
+    Just Refl -> return Refl
+    Nothing -> Left err
+
+{- Sadly, due to limitations of Haskell's type system, these functions must be
+   distinct, even though their bodies are identical. -}
+assertStacksEq :: CompileError -> VarStack a -> VarStack b -> Either CompileError (a :~: b)
+assertStacksEq err expected actual =
+  case testEquality expected actual of
+    Just Refl -> return Refl
+    Nothing -> Left err

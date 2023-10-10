@@ -100,7 +100,7 @@ execInstr Not (Item a stack) =
 execInstr (Cond l r) (Item a stack) =
   exec (if runIdentity a then l else r) stack
 execInstr Print (Item a stack) = do
-  print a
+  print $ runIdentity a
   return stack
 
 {- Add an instruction to the end of a sequence. Unfortunately, this
